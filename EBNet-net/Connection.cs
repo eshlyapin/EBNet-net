@@ -21,14 +21,14 @@ namespace EBNet_net
     public Connection(IPEndPoint endpoint)
       : base(new TcpClient())
     {
-      _socket.Connect(endpoint);
+      mSocket.Connect(endpoint);
     }
 
     public Task SendResponce(EBNetBase.Message message, int id)
     {
       var format = new HeaderFormat();
       var buffer = format.WrapMessage(message, id);
-      return _socket.GetStream().WriteAsync(buffer, 0, buffer.Length);
+      return mSocket.GetStream().WriteAsync(buffer, 0, buffer.Length);
     }
 
     public Task<EBNetBase.Message> SendRequest(EBNetBase.Message message)
@@ -38,7 +38,7 @@ namespace EBNet_net
         var header = new HeaderFormat();
         var buffer = header.WrapMessage(message, GetNextMsgID());
 
-        _socket.GetStream().WriteAsync(buffer, 0, buffer.Length).Wait();
+        mSocket.GetStream().WriteAsync(buffer, 0, buffer.Length).Wait();
 
         return WaitForResponce(header.MessageID);
       });

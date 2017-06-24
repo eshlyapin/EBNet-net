@@ -7,20 +7,20 @@ namespace EBNetBase
 {
   public abstract class Connection<FormatDescription> where FormatDescription : PacketFormatDescription, new()
   {
-    protected TcpClient _socket { get; set; }
-    CancellationTokenSource _tokenSource = new CancellationTokenSource();
+    protected TcpClient mSocket { get; set; }
+    CancellationTokenSource mTokenSource = new CancellationTokenSource();
 
     public abstract void OnPayloadReady(FormatDescription format, byte[] buffer);
     public abstract void OnDisconection(Exception ex);
 
     public Connection(TcpClient socket)
     {
-      _socket = socket;
+      mSocket = socket;
     }
 
     public async void StartReceiving()
     {
-      while (!_tokenSource.IsCancellationRequested)
+      while (!mTokenSource.IsCancellationRequested)
       {
         try
         {
@@ -30,7 +30,7 @@ namespace EBNetBase
 
           do
           {
-            read += await _socket.GetStream().ReadAsync(buffer, read, buffer.Length - read, _tokenSource.Token).ConfigureAwait(false);
+            read += await mSocket.GetStream().ReadAsync(buffer, read, buffer.Length - read, mTokenSource.Token).ConfigureAwait(false);
           } while (read < buffer.Length);
 
           format.ParseWrapper(buffer);
@@ -42,7 +42,7 @@ namespace EBNetBase
           {
             do
             {
-              read += await _socket.GetStream().ReadAsync(buffer, read, buffer.Length - read, _tokenSource.Token).ConfigureAwait(false);
+              read += await mSocket.GetStream().ReadAsync(buffer, read, buffer.Length - read, mTokenSource.Token).ConfigureAwait(false);
             } while (read < buffer.Length);
           }
 
@@ -50,7 +50,7 @@ namespace EBNetBase
         }
         catch (Exception ex)
         {
-          _socket.Close();
+          mSocket.Close();
           OnDisconection(ex);
           break;
         }
@@ -61,12 +61,12 @@ namespace EBNetBase
     {
       var format = new FormatDescription();
       var buffer = format.WrapMessage(msg);
-      return _socket.GetStream().WriteAsync(buffer, 0, buffer.Length);
+      return mSocket.GetStream().WriteAsync(buffer, 0, buffer.Length);
     }
 
     public void StopReceiving()
     {
-      _tokenSource.Cancel();
+      mTokenSource.Cancel();
     }
   }
 }
