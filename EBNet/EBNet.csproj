@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{0861761B-0E0C-4D70-A2F3-C4B57A0ECB19}</ProjectGuid>
+    <ProjectGuid>{B34AC8EA-D977-42D8-A1A4-C794670BA7F1}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EBNet_net</RootNamespace>
-    <AssemblyName>EBNet-net</AssemblyName>
+    <RootNamespace>EBNet</RootNamespace>
+    <AssemblyName>EBNet</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -31,8 +31,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="protobuf-net, Version=2.1.0.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
-      <HintPath>..\packages\protobuf-net.2.1.0\lib\net451\protobuf-net.dll</HintPath>
+    <Reference Include="protobuf-net, Version=2.3.2.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>..\packages\protobuf-net.2.3.2\lib\net40\protobuf-net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -46,17 +46,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Connection.cs" />
-    <Compile Include="ConnectionService.cs" />
-    <Compile Include="HeaderFormat.cs" />
-    <Compile Include="Messages.cs" />
+    <Compile Include="Host.cs" />
+    <Compile Include="InternalMessages.cs" />
+    <Compile Include="Message.cs" />
+    <Compile Include="MessageHandler.cs" />
+    <Compile Include="MessageHeader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Router.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\EBNetBase\EBNetBase.csproj">
-      <Project>{26e2a0a5-f44c-4096-bc3e-49d8c0d342ee}</Project>
-      <Name>EBNetBase</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

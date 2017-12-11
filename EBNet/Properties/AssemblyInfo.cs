@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("EBNet-net")]
+[assembly: AssemblyTitle("EBNet")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("EBNet-net")]
+[assembly: AssemblyProduct("EBNet")]
 [assembly: AssemblyCopyright("Copyright ©  2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("0861761b-0e0c-4d70-a2f3-c4b57a0ecb19")]
+[assembly: Guid("b34ac8ea-d977-42d8-a1a4-c794670ba7f1")]
 
 // Version information for an assembly consists of the following four values:
 //
