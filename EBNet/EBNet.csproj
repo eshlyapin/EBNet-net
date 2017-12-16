@@ -45,16 +45,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Channel.cs" />
     <Compile Include="Connection.cs" />
     <Compile Include="Host.cs" />
     <Compile Include="InternalMessages.cs" />
     <Compile Include="Message.cs" />
+    <Compile Include="MessageChannel.cs" />
     <Compile Include="MessageHandler.cs" />
     <Compile Include="MessageHeader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReliableChannel.cs" />
+    <Compile Include="ReliableHost.cs" />
+    <Compile Include="UnreliableHost.cs" />
+    <Compile Include="UnreliableChannel.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

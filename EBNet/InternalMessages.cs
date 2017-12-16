@@ -20,6 +20,11 @@ namespace EBNet
 
     [ProtoMember(3)]
     public int port { get; set; }
+
+    public override string ToString()
+    {
+      return "setup";
+    }
   }
 
   [MessageTypeID(11)]

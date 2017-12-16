@@ -9,74 +9,37 @@ using System.Threading.Tasks;
 
 namespace EBNet
 {
-  public class Host
+  public class Host2
   {
-    Random rnd = new Random();
-    IPEndPoint mTcpEndPoint;
-    IPEndPoint mUdpEndPoint;
+    ReliableHost rHost;
+    UnreliableHost urHost;
 
-    TcpListener mTcpListener;
-    UdpClient mUdpListener;
-
-    Router mRouter;
-    MessageTypeDictionary mDictionary;
-
-    Dictionary<int, Connection> mConnections = new Dictionary<int, Connection>();
-
-    public Host(IPEndPoint tcpEndPoint, IPEndPoint udpEndPoint, Router router, MessageTypeDictionary dictionary)
+    public Host2(IPEndPoint rep, IPEndPoint urep, MessageTypeDictionary dict)
     {
-      mTcpEndPoint = tcpEndPoint;
-      mUdpEndPoint = udpEndPoint;
+      rHost = new ReliableHost(rep, dict);
+      urHost = new UnreliableHost(rep, dict);
 
-      mTcpListener = new TcpListener(tcpEndPoint);
-      mUdpListener = new UdpClient(udpEndPoint);
-
-      mRouter = router;
-      mDictionary = dictionary;
+      //urHost.OnNewConnection += HandleUnreliableConnection;
+      rHost.OnNewConnection += HandleReliableConnection;
     }
 
     public void Start()
     {
-      mTcpListener.Start();
-      Task.Factory.StartNew(async () =>
-      {
-        while (true)
-        {
-          var tcpClient = mTcpListener.AcceptTcpClient();
-          var connection = new Connection(tcpClient, mRouter, mDictionary);
-          var sessionID = rnd.Next();
-          mConnections.Add(sessionID, connection);
-
-          var session = new SetupSession() { SessionId = sessionID, Address = mUdpEndPoint.Address.ToString(), port = mUdpEndPoint.Port };
-          await connection.SendReliable(session);
-          connection.SetupUnreliable(sessionID, new IPEndPoint(IPAddress.Parse(session.Address), session.port));
-        }
-      });
-
-      Task.Factory.StartNew(async () =>
-      {
-        while (true)
-        {
-          var received = await mUdpListener.ReceiveAsync();
-          using (var stream = new MemoryStream(received.Buffer))
-          {
-            var header = new UdpMessageHeader(stream);
-            if (mConnections.ContainsKey(header.SessionId))
-            {
-              var connection = mConnections[header.SessionId];
-              var response = connection.HandleMessage(header.TypeID, header.MessageID, stream);
-
-              if (response != null)
-                await connection.SendUnreliable(response, header.MessageID);
-            }
-          }
-        }
-      });
+      rHost.Start();
+      urHost.Start();
     }
 
-    public void Stop()
+    private async void HandleReliableConnection(ReliableChannel client)
     {
-
+      var sessionId = new Random().Next();
+      await client.Send(new SetupSession() { Address = urHost.HostEndPoint.Address.ToString(), port = urHost.HostEndPoint.Port, SessionId = sessionId });
+      var channel = urHost.RegisterChannel(sessionId);
+      var connection = new Connection(client, channel, true);
+      client.Start();
+      OnNewConnection(connection);
     }
+
+    public delegate void NewConnectionHandler(Connection connection);
+    public event NewConnectionHandler OnNewConnection;
   }
 }

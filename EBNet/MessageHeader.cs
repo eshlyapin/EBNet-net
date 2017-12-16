@@ -1,27 +1,32 @@
 ﻿
+using System;
 using System.IO;
 
 namespace EBNet
 {
-  class TcpMessageHeader
+  public abstract class MessageHeader : Message
   {
-    public int Length { get; set; }
     public int TypeID { get; set; }
     public int MessageID { get; set; }
 
-    public TcpMessageHeader() { }
-    public TcpMessageHeader(byte[] data)
-    {
-      using (var stream = new MemoryStream(data))
-        ReadFrom(stream);
-    }
+    public MessageHeader() { }
 
-    public TcpMessageHeader(MemoryStream stream)
+    public MessageHeader(MemoryStream stream)
     {
       ReadFrom(stream);
     }
 
-    public void ReadFrom(MemoryStream stream)
+    public abstract MemoryStream Wrap(Message msg);
+  }
+
+  public class TcpMessageHeader : MessageHeader
+  {
+    public int Length { get; private set; }
+
+    public TcpMessageHeader() { }
+    public TcpMessageHeader(MemoryStream stream) : base(stream) { }
+
+    public override void ReadFrom(MemoryStream stream)
     {
       using (var reader = new BinaryReader(stream, System.Text.Encoding.UTF8, true))
       {
@@ -31,7 +36,7 @@ namespace EBNet
       }
     }
 
-    public void WriteTo(MemoryStream stream)
+    public override void WriteTo(MemoryStream stream)
     {
       using (var writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, true))
       {
@@ -41,28 +46,56 @@ namespace EBNet
       }
     }
 
+    public override MemoryStream Wrap(Message msg)
+    {
+      using (var stream = new MemoryStream())
+      {
+        /*stream.Position = HeaderLength;
+        msg.WriteTo(stream);
+
+        Length = (int)stream.Position - HeaderLength;
+
+        stream.Position = 0;
+        WriteTo(stream);
+        var buffer = stream.ToArray();
+
+        Console.Write($"Sending:{msg}:");
+        foreach (var b in buffer)
+          Console.Write($"{b}");
+        Console.WriteLine();
+        return new MemoryStream(buffer);*/
+
+        byte[] msgbuff;
+        using (var temp = new MemoryStream())
+        {
+          msg.WriteTo(temp);
+          msgbuff = temp.ToArray();
+        }
+
+        Length = msgbuff.Length;
+        WriteTo(stream);
+        stream.Write(msgbuff, 0, msgbuff.Length);
+        var buffer = stream.ToArray();
+
+        Console.Write($"Sending:{msg}:");
+        foreach (var b in buffer)
+          Console.Write($"{b}");
+        Console.WriteLine();
+        return new MemoryStream(buffer);
+      }
+    }
+
     public static int HeaderLength { get { return sizeof(int) + sizeof(int) + sizeof(int); } }
   }
 
-  class UdpMessageHeader
+  class UdpMessageHeader : MessageHeader
   {
     public int SessionId { get; set; }
-    public int TypeID { get; set; }
-    public int MessageID { get; set; }
 
     public UdpMessageHeader() { }
-    public UdpMessageHeader(byte[] data)
-    {
-      using (var stream = new MemoryStream(data))
-        ReadFrom(stream);
-    }
+    public UdpMessageHeader(MemoryStream stream) : base(stream) { }
 
-    public UdpMessageHeader(MemoryStream stream)
-    {
-      ReadFrom(stream);
-    }
-
-    public void ReadFrom(MemoryStream stream)
+    public override void ReadFrom(MemoryStream stream)
     {
       using (var reader = new BinaryReader(stream, System.Text.Encoding.UTF8, true))
       {
@@ -72,13 +105,23 @@ namespace EBNet
       }
     }
 
-    public void WriteTo(MemoryStream stream)
+    public override void WriteTo(MemoryStream stream)
     {
       using (var writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, true))
       {
         writer.Write(SessionId);
         writer.Write(TypeID);
         writer.Write(MessageID);
+      }
+    }
+
+    public override MemoryStream Wrap(Message msg)
+    {
+      using (var stream = new MemoryStream())
+      {
+        WriteTo(stream);
+        msg.WriteTo(stream);
+        return stream;
       }
     }
   }

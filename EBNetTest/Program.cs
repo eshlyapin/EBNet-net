@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ProtoBuf;
 using EBNet;
+using System.IO;
 
 namespace EBNetTest
 {
@@ -56,7 +57,7 @@ namespace EBNetTest
 
       public override string ToString()
       {
-        return $"tcp text req: {test}";
+        return test;
       }
     }
 
@@ -69,7 +70,7 @@ namespace EBNetTest
 
       public override string ToString()
       {
-        return $"tci text resp: {test}";
+        return test;
       }
     }
 
@@ -82,7 +83,7 @@ namespace EBNetTest
 
       public override string ToString()
       {
-        return $"udp text req: {test}";
+        return test;
       }
     }
 
@@ -95,11 +96,11 @@ namespace EBNetTest
 
       public override string ToString()
       {
-        return $"udp text resp: {test}";
+        return test;
       }
     }
 
-    static Router GetClientRouter()
+    /*static Router GetClientRouter()
     {
       var router = new Router();
       router.AddHandler<HelloMsg>( (c, m) => { Console.WriteLine($"Client received: {m}"); });
@@ -117,6 +118,40 @@ namespace EBNetTest
       router.AddRequestHandler<TcpTestRequest>((c, m) => { Console.WriteLine($"Server received: {m}"); return new TcpTestResponse() { test = $"ok! {m.test}" }; });
       router.AddRequestHandler<UdpTestRequest>((c, m) => { Console.WriteLine($"Server received: {m}"); return new UdpTestResponse() { test = $"ok! {m.test}" }; });
       return router;
+    }*/
+
+    static async void OnNewServerMessage(Channel c, Message m, MessageHeader header)
+    {
+      if (m is TcpTestRequest)
+        await c.Send(new TcpTestResponse() { test = "ok!" });
+    }
+
+    static void TestSer(MessageTypeDictionary typeDict)
+    {
+      byte[] h1buffer;
+      using (var stream = new MemoryStream())
+      {
+        var h1 = new TcpMessageHeader() { MessageID = 0, TypeID = typeDict.GetTypeID(typeof(TcpTestRequest)) };
+        h1.WriteTo(stream);
+        h1buffer = stream.ToArray();
+      }
+
+
+      byte[] mbuffer;
+      using (var stream = new MemoryStream())
+      {
+        var m = new TcpTestRequest() { test = "test" };
+        m.WriteTo(stream);
+        mbuffer = stream.ToArray();
+      }
+
+      using (var stream = new MemoryStream(mbuffer))
+      {
+        var h2 = new TcpMessageHeader(new MemoryStream(h1buffer));
+        var m = Serializer.Deserialize(typeDict.GetTypeByID(h2.TypeID), stream);
+        Console.WriteLine(m);
+      }
+
     }
 
     static void Main(string[] args)
@@ -125,22 +160,24 @@ namespace EBNetTest
       var udpEndPoint = new IPEndPoint(IPAddress.Loopback, 5061);
 
       var typeDict = new MessageTypeDictionary();
+      TestSer(typeDict);
 
-      var host = new Host(tcpEndPoint, udpEndPoint, GetServerRouter(), typeDict);
-      host.Start();
+      var host = new Host2(tcpEndPoint, udpEndPoint, /*GetServerRouter(),*/ typeDict);
+      List<Connection> cs = new List<Connection>();
+      host.OnNewConnection += (c) => { Console.WriteLine("new connection"); c.OnMessageReceived += OnNewServerMessage; cs.Add(c); };
+      Task.Run(() => host.Start());
 
       var client = new TcpClient();
       client.Connect(new IPEndPoint(IPAddress.Loopback, 5060));
-      var connection = new Connection(client, GetClientRouter(), typeDict);
+      var connection = new Connection(new ReliableChannel(client, typeDict), new UnreliableChannel(typeDict));
 
-      connection.SendReliable(new HelloMsg() { Hello = "Hello world!", SomeInt1 = 42, SomeFloat = 0.0003f }).Wait();
-      var resp = connection.SendReliable<HelloMsg>(new HelloMsg() { Hello = "Req msg", SomeInt1 = 0, SomeFloat = 0.0f }).Result;
+      connection.GetReliable().Send(new TcpTestRequest() { test = "simple test" }).Wait();
+      connection.GetReliable().Send(new TcpTestRequest() { test = "simple test" }).Wait();
+      connection.GetReliable().Send(new TcpTestRequest() { test = "simple test" }).Wait();
+      //var mch = new MessageChannel(connection.GetReliable());
+      //var r1 = mch.Send<TcpTestResponse>(new TcpTestRequest() { test = "test request" }).Result;
 
-      var tcpresp = connection.SendReliable<TcpTestResponse>(new TcpTestRequest() { test = "TCPRequest" }).Result;
-      Console.WriteLine($"Client received: {tcpresp}");
-      var udpresp = connection.SendReliable<UdpTestResponse>(new UdpTestRequest() { test = "UDPRequest" }).Result;
-      Console.WriteLine($"Client received: {udpresp}");
-
+      Console.ReadKey();
       Console.ReadKey();
     }
   }
