@@ -22,19 +22,15 @@ namespace EBNet
 
     public async Task Start()
     {
+      Console.WriteLine("called");
       try
       {
         while (!cancellationSource.IsCancellationRequested)
         {
-          var buffer = await Receive(TcpMessageHeader.HeaderLength);
-          var header = new TcpMessageHeader(new MemoryStream(buffer));
+          var headerbuffer = await Receive(TcpMessageHeader.HeaderLength);
+          var header = new TcpMessageHeader(new MemoryStream(headerbuffer));
 
-          buffer = await Receive(header.Length);
-
-          Console.Write($"Received: ");
-          foreach (var b in buffer)
-            Console.Write($"{b}");
-          Console.WriteLine();
+          var buffer = await Receive(header.Length);
 
           var msgType = TypeDictionary.GetTypeByID(header.TypeID);
           var message = Serializer.Deserialize(msgType, new MemoryStream(buffer)) as Message;
@@ -50,18 +46,16 @@ namespace EBNet
 
     public async Task<byte[]> Receive(int count)
     {
-      //Console.Write($"count?: {count} ");
       var result = new byte[count];
       int read = 0;
       while (read < count)
         read += await mClient.GetStream().ReadAsync(result, read, count - read).ConfigureAwait(false);
-      //Console.WriteLine($":{result.Length}");
       return result;
     }
 
-    internal override MessageHeader CreateHeader(Message msg)
+    internal override MessageHeader CreateHeader(Message msg, int messageId)
     {
-      return new TcpMessageHeader() { TypeID = TypeDictionary.GetTypeID(msg.GetType()), MessageID = DefaultMessageId };
+      return new TcpMessageHeader() { TypeID = TypeDictionary.GetTypeID(msg.GetType()), MessageID = messageId };
     }
 
     internal override Task Write(MemoryStream source)

@@ -18,13 +18,18 @@ namespace EBNet
       TypeDictionary = dict;
     }
 
-    internal abstract MessageHeader CreateHeader(Message msg);
+    internal abstract MessageHeader CreateHeader(Message msg, int messageId);
     internal abstract Task Write(MemoryStream source);
+
+    internal Task Send(Message msg, int messageId)
+    {
+      var header = CreateHeader(msg, messageId);
+      return Write(header.Wrap(msg));
+    }
 
     public Task Send(Message msg)
     {
-      var header = CreateHeader(msg);
-      return Write(header.Wrap(msg));
+      return Send(msg, DefaultMessageId);
     }
 
     internal void RaiseMessageReceived(Channel channel, Message m, MessageHeader h)

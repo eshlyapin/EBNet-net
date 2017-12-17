@@ -17,9 +17,8 @@ namespace EBNet
     public Host2(IPEndPoint rep, IPEndPoint urep, MessageTypeDictionary dict)
     {
       rHost = new ReliableHost(rep, dict);
-      urHost = new UnreliableHost(rep, dict);
+      urHost = new UnreliableHost(urep, dict);
 
-      //urHost.OnNewConnection += HandleUnreliableConnection;
       rHost.OnNewConnection += HandleReliableConnection;
     }
 
@@ -31,11 +30,10 @@ namespace EBNet
 
     private async void HandleReliableConnection(ReliableChannel client)
     {
-      var sessionId = new Random().Next();
+      var sessionId = new Random().Next(); //TODO:
       await client.Send(new SetupSession() { Address = urHost.HostEndPoint.Address.ToString(), port = urHost.HostEndPoint.Port, SessionId = sessionId });
       var channel = urHost.RegisterChannel(sessionId);
-      var connection = new Connection(client, channel, true);
-      client.Start();
+      var connection = new Connection(client, channel);
       OnNewConnection(connection);
     }
 

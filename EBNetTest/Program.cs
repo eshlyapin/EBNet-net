@@ -11,95 +11,95 @@ using System.IO;
 
 namespace EBNetTest
 {
+  [MessageTypeID(1)]
+  [ProtoContract]
+  public class HelloMsg : Message<HelloMsg>
+  {
+    [ProtoMember(1)]
+    public string Hello { get; set; }
+
+    [ProtoMember(2)]
+    public int SomeInt1 { get; set; }
+
+    [ProtoMember(3)]
+    public float SomeFloat { get; set; }
+
+    public override string ToString()
+    {
+      return $"{Hello} - {SomeInt1} - {SomeFloat}";
+    }
+  }
+
+  [MessageTypeID(2)]
+  [ProtoContract]
+  public class MyPosition : Message<MyPosition>
+  {
+    [ProtoMember(1)]
+    public float x;
+
+    [ProtoMember(2)]
+    public float y;
+
+    public override string ToString()
+    {
+      return $"x: {x} - y: {y}";
+    }
+  }
+
+  [MessageTypeID(3)]
+  [ProtoContract]
+  public class TcpTestRequest : Message<TcpTestRequest>
+  {
+    [ProtoMember(1)]
+    public string test;
+
+    public override string ToString()
+    {
+      return test;
+    }
+  }
+
+  [MessageTypeID(4)]
+  [ProtoContract]
+  public class TcpTestResponse : Message<TcpTestResponse>
+  {
+    [ProtoMember(1)]
+    public string test;
+
+    public override string ToString()
+    {
+      return test;
+    }
+  }
+
+  [MessageTypeID(5)]
+  [ProtoContract]
+  public class UdpTestRequest : Message<UdpTestRequest>
+  {
+    [ProtoMember(1)]
+    public string test;
+
+    public override string ToString()
+    {
+      return test;
+    }
+  }
+
+  [MessageTypeID(6)]
+  [ProtoContract]
+  public class UdpTestResponse : Message<UdpTestResponse>
+  {
+    [ProtoMember(1)]
+    public string test;
+
+    public override string ToString()
+    {
+      return test;
+    }
+  }
+
   class Program
   {
-    [MessageTypeID(1)]
-    [ProtoContract]
-    class HelloMsg : Message<HelloMsg>
-    {
-      [ProtoMember(1)]
-      public string Hello { get; set; }
-      
-      [ProtoMember(2)]
-      public int SomeInt1 { get; set; }
-
-      [ProtoMember(3)]
-      public float SomeFloat { get; set; }
-
-      public override string ToString()
-      {
-        return $"{Hello} - {SomeInt1} - {SomeFloat}";
-      }
-    }
-
-    [MessageTypeID(2)]
-    [ProtoContract]
-    class MyPosition : Message<MyPosition>
-    {
-      [ProtoMember(1)]
-      public float x;
-
-      [ProtoMember(2)]
-      public float y;
-
-      public override string ToString()
-      {
-        return $"x: {x} - y: {y}";
-      }
-    }
-
-    [MessageTypeID(3)]
-    [ProtoContract]
-    class TcpTestRequest : Message<TcpTestRequest>
-    {
-      [ProtoMember(1)]
-      public string test;
-
-      public override string ToString()
-      {
-        return test;
-      }
-    }
-
-    [MessageTypeID(4)]
-    [ProtoContract]
-    class TcpTestResponse : Message<TcpTestResponse>
-    {
-      [ProtoMember(1)]
-      public string test;
-
-      public override string ToString()
-      {
-        return test;
-      }
-    }
-
-    [MessageTypeID(5)]
-    [ProtoContract]
-    class UdpTestRequest : Message<UdpTestRequest>
-    {
-      [ProtoMember(1)]
-      public string test;
-
-      public override string ToString()
-      {
-        return test;
-      }
-    }
-
-    [MessageTypeID(6)]
-    [ProtoContract]
-    class UdpTestResponse : Message<UdpTestResponse>
-    {
-      [ProtoMember(1)]
-      public string test;
-
-      public override string ToString()
-      {
-        return test;
-      }
-    }
-
     /*static Router GetClientRouter()
     {
       var router = new Router();
@@ -120,62 +120,36 @@ namespace EBNetTest
       return router;
     }*/
 
-    static async void OnNewServerMessage(Channel c, Message m, MessageHeader header)
+    static Message OnNewServerMessage(Connection connection, Message m)
     {
+      Console.WriteLine(m);
       if (m is TcpTestRequest)
-        await c.Send(new TcpTestResponse() { test = "ok!" });
+        return new TcpTestResponse() { test = m + "-ok" };
+      else if (m is UdpTestRequest)
+        return new UdpTestResponse() { test = m + "-ok" };
+      //connection.GetUnreliable().Send(new UdpTestResponse() { test = m + "-ok" });
+      return null;
     }
 
-    static void TestSer(MessageTypeDictionary typeDict)
-    {
-      byte[] h1buffer;
-      using (var stream = new MemoryStream())
-      {
-        var h1 = new TcpMessageHeader() { MessageID = 0, TypeID = typeDict.GetTypeID(typeof(TcpTestRequest)) };
-        h1.WriteTo(stream);
-        h1buffer = stream.ToArray();
-      }
-
-
-      byte[] mbuffer;
-      using (var stream = new MemoryStream())
-      {
-        var m = new TcpTestRequest() { test = "test" };
-        m.WriteTo(stream);
-        mbuffer = stream.ToArray();
-      }
-
-      using (var stream = new MemoryStream(mbuffer))
-      {
-        var h2 = new TcpMessageHeader(new MemoryStream(h1buffer));
-        var m = Serializer.Deserialize(typeDict.GetTypeByID(h2.TypeID), stream);
-        Console.WriteLine(m);
-      }
-
-    }
 
     static void Main(string[] args)
     {
       var tcpEndPoint = new IPEndPoint(IPAddress.Loopback, 5060);
       var udpEndPoint = new IPEndPoint(IPAddress.Loopback, 5061);
 
+      //var tcpEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.88"), 5060);
+      //var udpEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.88"), 5061);
+
+      //var tcpEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.201"), 5060);
+      //var udpEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.201"), 5061);
+
       var typeDict = new MessageTypeDictionary();
-      TestSer(typeDict);
 
       var host = new Host2(tcpEndPoint, udpEndPoint, /*GetServerRouter(),*/ typeDict);
       List<Connection> cs = new List<Connection>();
       host.OnNewConnection += (c) => { Console.WriteLine("new connection"); c.OnMessageReceived += OnNewServerMessage; cs.Add(c); };
       Task.Run(() => host.Start());
 
-      var client = new TcpClient();
-      client.Connect(new IPEndPoint(IPAddress.Loopback, 5060));
-      var connection = new Connection(new ReliableChannel(client, typeDict), new UnreliableChannel(typeDict));
-
-      connection.GetReliable().Send(new TcpTestRequest() { test = "simple test" }).Wait();
-      connection.GetReliable().Send(new TcpTestRequest() { test = "simple test" }).Wait();
-      connection.GetReliable().Send(new TcpTestRequest() { test = "simple test" }).Wait();
-      //var mch = new MessageChannel(connection.GetReliable());
-      //var r1 = mch.Send<TcpTestResponse>(new TcpTestRequest() { test = "test request" }).Result;
 
       Console.ReadKey();
       Console.ReadKey();

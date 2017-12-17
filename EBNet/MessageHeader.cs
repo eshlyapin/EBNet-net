@@ -50,7 +50,7 @@ namespace EBNet
     {
       using (var stream = new MemoryStream())
       {
-        /*stream.Position = HeaderLength;
+        stream.Position = HeaderLength;
         msg.WriteTo(stream);
 
         Length = (int)stream.Position - HeaderLength;
@@ -59,28 +59,6 @@ namespace EBNet
         WriteTo(stream);
         var buffer = stream.ToArray();
 
-        Console.Write($"Sending:{msg}:");
-        foreach (var b in buffer)
-          Console.Write($"{b}");
-        Console.WriteLine();
-        return new MemoryStream(buffer);*/
-
-        byte[] msgbuff;
-        using (var temp = new MemoryStream())
-        {
-          msg.WriteTo(temp);
-          msgbuff = temp.ToArray();
-        }
-
-        Length = msgbuff.Length;
-        WriteTo(stream);
-        stream.Write(msgbuff, 0, msgbuff.Length);
-        var buffer = stream.ToArray();
-
-        Console.Write($"Sending:{msg}:");
-        foreach (var b in buffer)
-          Console.Write($"{b}");
-        Console.WriteLine();
         return new MemoryStream(buffer);
       }
     }

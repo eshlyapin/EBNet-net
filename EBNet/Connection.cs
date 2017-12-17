@@ -18,41 +18,48 @@ namespace EBNet
 
     public ReliableChannel GetReliable()
     {
+      //TODO:
       while (!IsActive) ;
       return Reliable;
     }
-    public UnreliableChannel Unreliable { get; private set; }
 
-    internal Connection(ReliableChannel rel, UnreliableChannel unr, bool accepted)
+    UnreliableChannel Unreliable { get; set; }
+
+    public UnreliableChannel GetUnreliable()
+    {
+      //TODO:
+      while (!IsActive) ;
+      return Unreliable;
+    }
+
+
+    public Connection(ReliableChannel rel, UnreliableChannel unr) 
     {
       Reliable = rel;
       Unreliable = unr;
-      if (!accepted)
-      {
-        Reliable.OnMessageReceived += MessageHandler;
-        Unreliable.OnMessageReceived += MessageHandler;
-      }
+      Reliable.OnMessageReceived += Handler;
+      Unreliable.OnMessageReceived += Handler;
       Reliable.Start();
     }
 
-    public Connection(ReliableChannel rel, UnreliableChannel unr) : this(rel, unr, false)
-    {
-    }
-
-    private void MessageHandler(Channel channel, Message m, MessageHeader h)
+    private async void Handler(Channel channel, Message m, MessageHeader h)
     {
       if (m is SetupSession)
       {
         var session = m as SetupSession;
         Unreliable.SessionID = session.SessionId;
-        Reliable.OnMessageReceived -= MessageHandler;
-        Unreliable.OnMessageReceived -= MessageHandler;
-        Reliable.OnMessageReceived += OnMessageReceived;
-        Unreliable.OnMessageReceived += OnMessageReceived;
+        Unreliable.Setup(new IPEndPoint(IPAddress.Parse(session.Address), session.port));
         IsActive = true;
+      }
+      else
+      {
+        var resp = OnMessageReceived?.Invoke(this, m);
+        if (resp != null)
+          await channel.Send(resp, h.MessageID);
       }
     }
 
-    public event Channel.MessageHandler OnMessageReceived;
+    public delegate Message MessageHandler(Connection connection, Message msg);
+    public event MessageHandler OnMessageReceived;
   }
 }

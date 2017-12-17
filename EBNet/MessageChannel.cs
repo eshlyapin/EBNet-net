@@ -13,31 +13,30 @@ namespace EBNet
   {
     Channel mOwner;
     ConcurrentDictionary<int, TaskCompletionSource<Message>> awaiters = new ConcurrentDictionary<int, TaskCompletionSource<Message>>();
-    int MessageID = 0;
+    int MessageID = 1;
 
     public MessageChannel(Channel owner)
       : base(owner.TypeDictionary)
     {
       mOwner = owner;
-      OnMessageReceived += HandleMessage;
     }
 
     public async Task<T> Send<T>(Message m) where T : Message<T>
     {
+      mOwner.OnMessageReceived += HandleMessage; //TODO:
       var res = new TaskCompletionSource<Message>();
-      awaiters.TryAdd(MessageID, res);
-      await Send(m);
+      awaiters.TryAdd(MessageID, res);  //TODO:
+      await Send(m, MessageID);
       var response = await res.Task;
-      awaiters.TryRemove(MessageID, out res);
+      while(!awaiters.TryRemove(MessageID, out res)) ;  //TODO:
       Interlocked.Increment(ref MessageID);
+      mOwner.OnMessageReceived -= HandleMessage; //TODO:
       return response as T;
     }
 
-    internal override MessageHeader CreateHeader(Message msg)
+    internal override MessageHeader CreateHeader(Message msg, int messageId)
     {
-      var header = mOwner.CreateHeader(msg);
-      header.MessageID = MessageID;
-      return header;
+      return mOwner.CreateHeader(msg, MessageID);
     }
 
     internal override Task Write(MemoryStream source)
@@ -54,7 +53,9 @@ namespace EBNet
       }
       else
       {
+        mOwner.OnMessageReceived -= HandleMessage; //TODO:
         mOwner.RaiseMessageReceived(channel, msg, header);
+        mOwner.OnMessageReceived += HandleMessage; //TODO:
       }
     }
   }

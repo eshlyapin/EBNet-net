@@ -25,6 +25,7 @@ namespace EBNet
       HostEndPoint = ep;
       mTypeDictionary = dict;
       mListener = new UdpClient(ep);
+      mListener.ExclusiveAddressUse = false;
     }
 
     public async void Start()
@@ -35,10 +36,10 @@ namespace EBNet
 
         using (var stream = new MemoryStream(datagram.Buffer))
         {
-          var header = new UdpMessageHeader();
+          var header = new UdpMessageHeader(stream);
           if (mClients.ContainsKey(header.SessionId))
           {
-            var channel = mClients[header.MessageID];
+            var channel = mClients[header.SessionId];
             channel.RaiseDatagramReceived(datagram);
           }
         }
@@ -47,7 +48,8 @@ namespace EBNet
 
     public UnreliableChannel RegisterChannel(int sessionId)
     {
-      var channel = new UnreliableChannel(mTypeDictionary);
+      var channel = new UnreliableChannel(HostEndPoint, mTypeDictionary);
+      channel.SessionID = sessionId;
       mClients.TryAdd(sessionId, channel);
       return channel;
     }
@@ -56,7 +58,5 @@ namespace EBNet
     {
       cancellationSource.Cancel();
     }
-    public delegate void NewConnectionHandler(UnreliableChannel client);
-    public event NewConnectionHandler OnNewConnection;
   }
 }

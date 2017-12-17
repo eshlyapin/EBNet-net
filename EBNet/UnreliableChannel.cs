@@ -14,17 +14,22 @@ namespace EBNet
   {
     public IPEndPoint EndPoint { get; private set; }
     public int SessionID { get; set; }
-    UdpClient mClient { get; set; }
-
-    public UnreliableChannel(IPEndPoint ep, MessageTypeDictionary dict) : base(dict)
-    {
-      EndPoint = ep;
-      mClient.Connect(EndPoint);
-    }
+    UdpClient mClient { get; set; } = new UdpClient();
 
     public UnreliableChannel(MessageTypeDictionary dict) : base(dict)
     {
 
+    }
+
+    internal UnreliableChannel(IPEndPoint localEp, MessageTypeDictionary dict) : base(dict)
+    {
+      mClient = new UdpClient(localEp);
+    }
+
+    internal void Setup(IPEndPoint ep)
+    {
+      EndPoint = ep;
+      mClient.Connect(ep);
     }
 
     internal void RaiseDatagramReceived(UdpReceiveResult datagram)
@@ -35,20 +40,21 @@ namespace EBNet
         var msgType = TypeDictionary.GetTypeByID(header.TypeID);
         var message = Serializer.Deserialize(msgType, stream) as Message;
         if (EndPoint == null)
-          EndPoint = datagram.RemoteEndPoint;
+          Setup(datagram.RemoteEndPoint);
         RaiseMessageReceived(this, message, header);
       }
     }
 
-    internal override MessageHeader CreateHeader(Message msg)
+    internal override MessageHeader CreateHeader(Message msg, int messageId)
     {
-      return new UdpMessageHeader() { TypeID = TypeDictionary.GetTypeID(msg.GetType()), SessionId = SessionID, MessageID = DefaultMessageId };
+      return new UdpMessageHeader() { TypeID = TypeDictionary.GetTypeID(msg.GetType()), SessionId = SessionID, MessageID = messageId };
     }
 
-    internal override Task Write(MemoryStream source)
+    internal async override Task Write(MemoryStream source)
     {
       var buffer = source.ToArray();
-      return mClient.SendAsync(buffer, buffer.Length);
+      Console.WriteLine($"Write to: {EndPoint.Address}:{EndPoint.Port},{mClient.Available}");
+      await mClient.SendAsync(buffer, buffer.Length);
     }
   }
 }
