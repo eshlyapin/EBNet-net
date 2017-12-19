@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace EBNet
 {
-  public class UnreliableChannel : Channel
+  public class UnreliableChannel : MessageChannel
   {
     public IPEndPoint RemoteEndPoint { get; private set; }
     public int SessionID { get; private set; }
@@ -59,7 +59,7 @@ namespace EBNet
       {
         var header = new UdpMessageHeader(stream);
         var message = Serializer.Deserialize(TypeDictionary.GetTypeByID(header.TypeID), stream) as Message;
-        RaiseMessageReceived(this, message, header);
+        OnReceived(header, message);
       }
     }
 

@@ -29,25 +29,24 @@ namespace ClientTest
         connection.Reliable.Send(new TcpTestRequest() { test = "simple test" }).Wait();
         connection.Reliable.Send(new TcpTestRequest() { test = "simple test" }).Wait();
 
-        var r1 = new MessageChannel(connection.Reliable).Send<TcpTestResponse>(new TcpTestRequest() { test = "tcp-req" }).Result;
+        var r1 = connection.Reliable.Send<TcpTestResponse>(new TcpTestRequest() { test = "tcp-req" }).Result;
+        Console.WriteLine(r1);
 
+        int countOfUdpResp = 0;
         for (int i = 0; i < 100; ++i)
         {
           Task.Delay(500).Wait();
-          var r2 = new MessageChannel(connection.Unreliable).Send<UdpTestResponse>(new UdpTestRequest() { test = "udp-req" }).Result;
+          var r2 = connection.Unreliable.Send<UdpTestResponse>(new UdpTestRequest() { test = "udp-req" }).Result;
+          countOfUdpResp += 1;
         }
-        Console.WriteLine($"received responces: {res}");
+        Console.WriteLine($"received responces: {countOfUdpResp}");
         Console.ReadKey();
       }
     }
 
-    static int res = 0;
     private static Message OnSomeReceived(Connection connection, Message msg)
     {
-      if (msg is UdpTestResponse)
-        res++;
-      else
-        Console.WriteLine(msg);
+      Console.WriteLine(msg);
       return null;
     }
   }

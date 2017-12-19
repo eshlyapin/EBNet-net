@@ -34,11 +34,6 @@ namespace EBNet
       return Write(header.Wrap(msg));
     }
 
-    internal void RaiseMessageReceived(Channel channel, Message m, MessageHeader h)
-    {
-      OnMessageReceived?.Invoke(channel, m, h);
-    }
-
-    public event Action<Channel, Message, MessageHeader> OnMessageReceived;
+    public abstract void OnReceived(MessageHeader header, Message msg);
   }
 }

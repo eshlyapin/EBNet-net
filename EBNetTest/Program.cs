@@ -100,25 +100,6 @@ namespace EBNetTest
 
   class Program
   {
-    /*static Router GetClientRouter()
-    {
-      var router = new Router();
-      router.AddHandler<HelloMsg>( (c, m) => { Console.WriteLine($"Client received: {m}"); });
-      router.AddHandler<MyPosition>( (c, m) => { Console.WriteLine($"Client received: {m}"); });
-      router.AddHandler<TcpTestResponse>((c, m) => { Console.WriteLine($"Client received: {m}"); });
-      router.AddHandler<UdpTestResponse>((c, m) => { Console.WriteLine($"Client received: {m}"); });
-      return router;
-    }
-
-    static Router GetServerRouter()
-    {
-      var router = new Router();
-      router.AddRequestHandler<HelloMsg>((c, m) => { Console.WriteLine($"Server received: {m}"); return m; });
-      router.AddHandler<MyPosition>(async (c, m) => { Console.WriteLine($"Server received: {m}"); m.x += 1; m.y += 1; await c.SendReliable(m); });
-      router.AddRequestHandler<TcpTestRequest>((c, m) => { Console.WriteLine($"Server received: {m}"); return new TcpTestResponse() { test = $"ok! {m.test}" }; });
-      router.AddRequestHandler<UdpTestRequest>((c, m) => { Console.WriteLine($"Server received: {m}"); return new UdpTestResponse() { test = $"ok! {m.test}" }; });
-      return router;
-    }*/
 
     static Message OnNewServerMessage(Connection connection, Message m)
     {
@@ -127,7 +108,6 @@ namespace EBNetTest
         return new TcpTestResponse() { test = m + "-ok" };
       else if (m is UdpTestRequest)
         return new UdpTestResponse() { test = m + "-ok" };
-      //connection.GetUnreliable().Send(new UdpTestResponse() { test = m + "-ok" });
       return null;
     }
 
@@ -145,7 +125,7 @@ namespace EBNetTest
 
       var typeDict = new MessageTypeDictionary();
 
-      var host = new Host2(tcpEndPoint, udpEndPoint, /*GetServerRouter(),*/ typeDict);
+      var host = new Host2(tcpEndPoint, udpEndPoint, typeDict);
       List<Connection> cs = new List<Connection>();
       host.OnNewConnection += (c) => { Console.WriteLine("new connection"); c.OnMessageReceived += OnNewServerMessage; cs.Add(c); };
       Task.Run(() => host.Start());

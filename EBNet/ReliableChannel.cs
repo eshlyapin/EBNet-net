@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace EBNet
 {
-  public class ReliableChannel : Channel
+  public class ReliableChannel : MessageChannel
   {
     TcpClient mClient;
     CancellationTokenSource cancellationSource = new CancellationTokenSource();
@@ -29,7 +29,7 @@ namespace EBNet
         {
           var header = await ReceiveHeader().ConfigureAwait(false);
           var message = await ReceiveMessage(header).ConfigureAwait(false);
-          RaiseMessageReceived(this, message, header);
+          OnReceived(header, message);
         }
 
       }
