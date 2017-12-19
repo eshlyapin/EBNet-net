@@ -134,14 +134,14 @@ namespace EBNetTest
 
     static void Main(string[] args)
     {
-      var tcpEndPoint = new IPEndPoint(IPAddress.Loopback, 5060);
-      var udpEndPoint = new IPEndPoint(IPAddress.Loopback, 5061);
+      //var tcpEndPoint = new IPEndPoint(IPAddress.Loopback, 5060);
+      //var udpEndPoint = new IPEndPoint(IPAddress.Loopback, 5061);
 
       //var tcpEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.88"), 5060);
       //var udpEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.88"), 5061);
 
-      //var tcpEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.201"), 5060);
-      //var udpEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.201"), 5061);
+      var tcpEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.201"), 5060);
+      var udpEndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.201"), 5061);
 
       var typeDict = new MessageTypeDictionary();
 

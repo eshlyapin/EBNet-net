@@ -12,54 +12,43 @@ namespace EBNet
   public class Connection
   {
     int SessionID { get; set; }
-    bool IsActive = false;
 
-    ReliableChannel Reliable { get; set; }
+    public ReliableChannel Reliable { get; private set; }
+    public UnreliableChannel Unreliable { get; private set; }
 
-    public ReliableChannel GetReliable()
-    {
-      //TODO:
-      while (!IsActive) ;
-      return Reliable;
-    }
-
-    UnreliableChannel Unreliable { get; set; }
-
-    public UnreliableChannel GetUnreliable()
-    {
-      //TODO:
-      while (!IsActive) ;
-      return Unreliable;
-    }
-
-
-    public Connection(ReliableChannel rel, UnreliableChannel unr) 
+    internal Connection(ReliableChannel rel, UnreliableChannel unr)
     {
       Reliable = rel;
       Unreliable = unr;
       Reliable.OnMessageReceived += Handler;
       Unreliable.OnMessageReceived += Handler;
+    }
+
+    public Connection(ReliableChannel rel, UnreliableChannel unr, Func<Connection, Message, Message> handler) : this(rel,unr)
+    {
+      var session = ReceiveSetupMessage(rel);
+      if (session == null)
+        throw new InvalidOperationException("Connection failed");
+
+      Unreliable.Setup(new IPEndPoint(IPAddress.Parse(session.Address), session.port), session.SessionId);
+
+      OnMessageReceived += handler;
       Reliable.Start();
     }
 
-    private async void Handler(Channel channel, Message m, MessageHeader h)
+    SetupSession ReceiveSetupMessage(ReliableChannel channel)
     {
-      if (m is SetupSession)
-      {
-        var session = m as SetupSession;
-        Unreliable.SessionID = session.SessionId;
-        Unreliable.Setup(new IPEndPoint(IPAddress.Parse(session.Address), session.port));
-        IsActive = true;
-      }
-      else
-      {
-        var resp = OnMessageReceived?.Invoke(this, m);
-        if (resp != null)
-          await channel.Send(resp, h.MessageID);
-      }
+      var header = channel.ReceiveHeader().Result;
+      return channel.ReceiveMessage(header).Result as SetupSession;
     }
 
-    public delegate Message MessageHandler(Connection connection, Message msg);
-    public event MessageHandler OnMessageReceived;
+    async void Handler(Channel channel, Message m, MessageHeader h)
+    {
+      var resp = OnMessageReceived?.Invoke(this, m);
+      if (resp != null)
+        await channel.Send(resp, h.MessageID).ConfigureAwait(false);
+    }
+
+    public event Func<Connection,Message,Message> OnMessageReceived;
   }
 }

@@ -26,9 +26,9 @@ namespace EBNet
       mOwner.OnMessageReceived += HandleMessage; //TODO:
       var res = new TaskCompletionSource<Message>();
       awaiters.TryAdd(MessageID, res);  //TODO:
-      await Send(m, MessageID);
-      var response = await res.Task;
-      while(!awaiters.TryRemove(MessageID, out res)) ;  //TODO:
+      await Send(m, MessageID).ConfigureAwait(false);
+      var response = await res.Task.ConfigureAwait(false);
+      awaiters.TryRemove(MessageID, out res);  //TODO:
       Interlocked.Increment(ref MessageID);
       mOwner.OnMessageReceived -= HandleMessage; //TODO:
       return response as T;
@@ -57,6 +57,11 @@ namespace EBNet
         mOwner.RaiseMessageReceived(channel, msg, header);
         mOwner.OnMessageReceived += HandleMessage; //TODO:
       }
+    }
+
+    public override void Close()
+    {
+      mOwner.Close();
     }
   }
 }

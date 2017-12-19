@@ -39,7 +39,6 @@ namespace EBNet
       cancellationSource.Cancel();
     }
 
-    public delegate void NewConnectionHandler(ReliableChannel client);
-    public event NewConnectionHandler OnNewConnection;
+    public event Action<ReliableChannel> OnNewConnection;
   }
 }

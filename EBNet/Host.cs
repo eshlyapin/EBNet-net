@@ -31,13 +31,13 @@ namespace EBNet
     private async void HandleReliableConnection(ReliableChannel client)
     {
       var sessionId = new Random().Next(); //TODO:
-      await client.Send(new SetupSession() { Address = urHost.HostEndPoint.Address.ToString(), port = urHost.HostEndPoint.Port, SessionId = sessionId });
+      await client.Send(new SetupSession() { Address = urHost.HostEndPoint.Address.ToString(), port = urHost.HostEndPoint.Port, SessionId = sessionId }).ConfigureAwait(false);
       var channel = urHost.RegisterChannel(sessionId);
       var connection = new Connection(client, channel);
       OnNewConnection(connection);
+      connection.Reliable.Start();
     }
 
-    public delegate void NewConnectionHandler(Connection connection);
-    public event NewConnectionHandler OnNewConnection;
+    public event Action<Connection> OnNewConnection;
   }
 }

@@ -19,28 +19,35 @@ namespace ClientTest
 
       using (var client = new TcpClient())
       {
-        //client.Connect(new IPEndPoint(IPAddress.Parse("192.168.1.201"), 5060));
+        client.Connect(new IPEndPoint(IPAddress.Parse("192.168.1.201"), 5060));
         //client.Connect(new IPEndPoint(IPAddress.Parse("10.0.2.15"), 5060));
         //client.Connect(new IPEndPoint(IPAddress.Parse("192.168.1.88"), 5060));
-        client.Connect(new IPEndPoint(IPAddress.Loopback, 5060));
-        var connection = new Connection(new ReliableChannel(client, typeDict), new UnreliableChannel(typeDict));
+        //client.Connect(new IPEndPoint(IPAddress.Loopback, 5060));
+        var connection = new Connection(new ReliableChannel(client, typeDict), new UnreliableChannel(typeDict), OnSomeReceived);
 
-        connection.OnMessageReceived += OnSomeReceived;
+        connection.Reliable.Send(new TcpTestRequest() { test = "simple test" }).Wait();
+        connection.Reliable.Send(new TcpTestRequest() { test = "simple test" }).Wait();
+        connection.Reliable.Send(new TcpTestRequest() { test = "simple test" }).Wait();
 
-        connection.GetReliable().Send(new TcpTestRequest() { test = "simple test" }).Wait();
-        connection.GetReliable().Send(new TcpTestRequest() { test = "simple test" }).Wait();
-        connection.GetReliable().Send(new TcpTestRequest() { test = "simple test" }).Wait();
+        var r1 = new MessageChannel(connection.Reliable).Send<TcpTestResponse>(new TcpTestRequest() { test = "tcp-req" }).Result;
 
-        var r1 = new MessageChannel(connection.GetReliable()).Send<TcpTestResponse>(new TcpTestRequest() { test = "tcp-req" }).Result;
-
-        var r2 = new MessageChannel(connection.GetUnreliable()).Send<UdpTestResponse>(new UdpTestRequest() { test = "udp-req" }).Result;
+        for (int i = 0; i < 100; ++i)
+        {
+          Task.Delay(500).Wait();
+          var r2 = new MessageChannel(connection.Unreliable).Send<UdpTestResponse>(new UdpTestRequest() { test = "udp-req" }).Result;
+        }
+        Console.WriteLine($"received responces: {res}");
         Console.ReadKey();
       }
     }
 
+    static int res = 0;
     private static Message OnSomeReceived(Connection connection, Message msg)
     {
-      Console.WriteLine(msg);
+      if (msg is UdpTestResponse)
+        res++;
+      else
+        Console.WriteLine(msg);
       return null;
     }
   }

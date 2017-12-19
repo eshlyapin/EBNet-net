@@ -18,6 +18,13 @@ namespace EBNet
       TypeDictionary = dict;
     }
 
+    public Task Send(Message msg)
+    {
+      return Send(msg, DefaultMessageId);
+    }
+
+    public abstract void Close();
+
     internal abstract MessageHeader CreateHeader(Message msg, int messageId);
     internal abstract Task Write(MemoryStream source);
 
@@ -27,17 +34,11 @@ namespace EBNet
       return Write(header.Wrap(msg));
     }
 
-    public Task Send(Message msg)
-    {
-      return Send(msg, DefaultMessageId);
-    }
-
     internal void RaiseMessageReceived(Channel channel, Message m, MessageHeader h)
     {
       OnMessageReceived?.Invoke(channel, m, h);
     }
 
-    public delegate void MessageHandler(Channel channel, Message m, MessageHeader h);
-    public event MessageHandler OnMessageReceived;
+    public event Action<Channel, Message, MessageHeader> OnMessageReceived;
   }
 }
