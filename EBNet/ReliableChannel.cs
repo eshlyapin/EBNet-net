@@ -22,7 +22,6 @@ namespace EBNet
 
     public async Task Start()
     {
-      Console.WriteLine("called");
       try
       {
         while (!cancellationSource.IsCancellationRequested)
@@ -35,7 +34,7 @@ namespace EBNet
       }
       catch (Exception ex)
       {
-        Console.WriteLine(ex.Message);
+        //Console.WriteLine(ex.Message);
       }
     }
 

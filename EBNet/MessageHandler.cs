@@ -9,10 +9,9 @@ namespace EBNet
   {
     List<Tuple<Type, int>> msgIDs = new List<Tuple<Type, int>>();
 
-    public MessageTypeDictionary()
+    public MessageTypeDictionary(Assembly[] assemblies)
     {
       var result = new List<Type>();
-      var assemblies = AppDomain.CurrentDomain.GetAssemblies();
       foreach (var assemly in assemblies)
       {
         var messages = assemly.GetTypes().Where((t) => t.GetCustomAttribute<MessageTypeID>() != null && !t.IsAbstract && t.IsSubclassOf(typeof(Message))).ToArray();
@@ -23,6 +22,9 @@ namespace EBNet
       {
         msgIDs.Add(new Tuple<Type, int>(msg, msg.GetCustomAttribute<MessageTypeID>().TypeID));
       }
+    }
+    public MessageTypeDictionary() : this(AppDomain.CurrentDomain.GetAssemblies())
+    {
     }
 
     public int GetTypeID(Type type)

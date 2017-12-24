@@ -33,7 +33,7 @@ namespace EBNet
       var sessionId = new Random().Next(); //TODO:
       await client.Send(new SetupSession() { Address = urHost.HostEndPoint.Address.ToString(), port = urHost.HostEndPoint.Port, SessionId = sessionId }).ConfigureAwait(false);
       var channel = urHost.RegisterChannel(sessionId);
-      var connection = new Connection(client, channel);
+      var connection = new Connection(client, channel, sessionId);
       OnNewConnection(connection);
       connection.Reliable.Start();
     }

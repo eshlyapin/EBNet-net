@@ -127,7 +127,7 @@ namespace EBNetTest
 
       var host = new Host2(tcpEndPoint, udpEndPoint, typeDict);
       List<Connection> cs = new List<Connection>();
-      host.OnNewConnection += (c) => { Console.WriteLine("new connection"); c.OnMessageReceived += OnNewServerMessage; cs.Add(c); };
+      host.OnNewConnection += (c) => { Console.WriteLine("new connection"); c.OnMessageReceived += OnNewServerMessage; cs.Add(c); if (c == null) Console.WriteLine("connection is null!!"); };
       Task.Run(() => host.Start());
 
 

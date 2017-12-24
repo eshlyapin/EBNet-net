@@ -25,22 +25,38 @@ namespace EBNet
       HostEndPoint = ep;
       mTypeDictionary = dict;
       mListener = new UdpClient(ep);
+
+      //the UDP socket is also receiving ICMP messages and throwing exceptions when they are received.
+      //https://stackoverflow.com/questions/5199026/c-sharp-async-udp-listener-socketexception
+      int SIO_UDP_CONNRESET = -1744830452;
+      mListener.Client.IOControl(
+          (IOControlCode)SIO_UDP_CONNRESET,
+          new byte[] { 0, 0, 0, 0 },
+          null
+      );
     }
 
     public async void Start()
     {
       while (!cancellationSource.IsCancellationRequested)
       {
-        var datagram = await mListener.ReceiveAsync().ConfigureAwait(false);
-
-        using (var stream = new MemoryStream(datagram.Buffer))
+        try
         {
-          var header = new UdpMessageHeader(stream);
-          if (mClients.ContainsKey(header.SessionId))
+          var datagram = await mListener.ReceiveAsync().ConfigureAwait(false);
+
+          using (var stream = new MemoryStream(datagram.Buffer))
           {
-            var channel = mClients[header.SessionId];
-            channel.RaiseDatagramReceived(datagram);
+            var header = new UdpMessageHeader(stream);
+            if (mClients.ContainsKey(header.SessionId))
+            {
+              var channel = mClients[header.SessionId];
+              channel.RaiseDatagramReceived(datagram);
+            }
           }
+        }
+        catch(SocketException ex)
+        {
+          //Console.WriteLine(ex.Message);
         }
       }
     }
@@ -58,6 +74,7 @@ namespace EBNet
       //TODO:
       UnreliableChannel removed;
       mClients.TryRemove(channel.SessionID, out removed);
+      removed.OnClose -= UnregisterChanel;
     }
 
     public void Stop()
